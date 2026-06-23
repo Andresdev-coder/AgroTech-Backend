@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # Importamos el router desde la estructura de carpetas
 from app.routers import dashboard
 from app.routers import insumos
+from app.routers import lotes
+
 
 app = FastAPI(
     title="AgroTech API",
@@ -27,6 +29,7 @@ app.add_middleware(
 # Registrar el router del Dashboard
 app.include_router(dashboard.router)
 app.include_router(insumos.router)
+app.include_router(lotes.router)
 
 @app.get("/")
 def read_root():
