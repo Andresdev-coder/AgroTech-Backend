@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Importamos el router desde la estructura de carpetas
 from app.routers import dashboard
 from app.routers import insumos
-from app.routers import lotes
+from app.routers import lotes, movimientos
 
 
 app = FastAPI(
@@ -30,6 +30,7 @@ app.add_middleware(
 app.include_router(dashboard.router)
 app.include_router(insumos.router)
 app.include_router(lotes.router)
+app.include_router(movimientos.router)
 
 @app.get("/")
 def read_root():
