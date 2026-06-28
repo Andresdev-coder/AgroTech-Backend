@@ -9,9 +9,8 @@ router = APIRouter(
     tags=["Movimientos"]
 )
 
-# Esquema de Pydantic para validar los datos que enviará tu formulario de React
 class MovimientoCreate(BaseModel):
-    id_lote: int          # Cambiado a id_lote para unirse con la PK real
+    id_lote: int          
     cantidad_retirada: int
     destino: str
     encargado: str
@@ -26,6 +25,7 @@ def registrar_salida(movimiento: MovimientoCreate, connection = Depends(get_db))
         if not result_lote:
             raise HTTPException(status_code=404, detail="El lote especificado no existe.")
         
+        # Uso correcto de ._mapping para SQLAlchemy 2.0
         cantidad_actual = result_lote._mapping["cantidad_actual"]
         codigo_lote = result_lote._mapping["codigo_lote"]
         
@@ -60,12 +60,15 @@ def registrar_salida(movimiento: MovimientoCreate, connection = Depends(get_db))
             "encargado": movimiento.encargado
         })
         
-        # Guardar todos los cambios de manera atómica
+        # Guardar todos los cambios de manera atómica si todo anduvo bien
         connection.commit()
         return {"message": f"Salida del lote {codigo_lote} registrada exitosamente."}
         
     except HTTPException as http_exc:
+        # Si salta un error de stock o un 404, limpiamos la transacción antes de responderle al Front
+        connection.rollback()
         raise http_exc
     except Exception as e:
+        # Si explota algo inesperado a nivel de sintaxis SQL o conexión
         connection.rollback()
-        raise HTTPException(status_code=500, detail=f"Error en la base de datos: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error inesperado en la base de datos: {str(e)}")
