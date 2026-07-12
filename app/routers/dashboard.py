@@ -4,11 +4,16 @@ from sqlalchemy import func
 from datetime import datetime
 
 # Importamos la conexión, los modelos y el esquema de validación
+from app.core.dependencies import require_roles
 from app.database.database import get_db
 from app.models import models
 from app.schemas.schemas import DashboardResponse
 
-router = APIRouter(prefix="/api/dashboard", tags=["Dashboard"])
+router = APIRouter(
+    prefix="/api/dashboard",
+    tags=["Dashboard"],
+    dependencies=[Depends(require_roles("admin", "bodeguero", "ventas"))],
+)
 
 @router.get("", response_model=DashboardResponse)
 async def get_dashboard_data(db: Session = Depends(get_db)):

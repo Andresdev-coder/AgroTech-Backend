@@ -68,6 +68,14 @@ CREATE TABLE ventas (
     id_venta INT AUTO_INCREMENT,
     fecha_venta TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id_usuario INT NOT NULL,
+    cliente_nombre VARCHAR(120) NULL,
+    cliente_nit VARCHAR(40) NULL,
+    subtotal_factura DECIMAL(10,2) NOT NULL DEFAULT 0,
+    descuento_porcentaje DECIMAL(5,2) NOT NULL DEFAULT 0,
+    descuento_valor DECIMAL(10,2) NOT NULL DEFAULT 0,
+    iva_porcentaje DECIMAL(5,2) NOT NULL DEFAULT 19,
+    iva_valor DECIMAL(10,2) NOT NULL DEFAULT 0,
+    total_factura DECIMAL(10,2) NOT NULL DEFAULT 0,
     CONSTRAINT PK_ventas PRIMARY KEY (id_venta),
     CONSTRAINT FK_ventas_usuarios FOREIGN KEY (id_usuario) 
         REFERENCES usuarios(id_usuario) ON UPDATE CASCADE ON DELETE RESTRICT

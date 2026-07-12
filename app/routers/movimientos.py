@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import List
+from app.core.dependencies import require_roles
 from app.database.database import get_db  
 from sqlalchemy import text
 
 router = APIRouter(
     prefix="/api/movimientos",
-    tags=["Movimientos"]
+    tags=["Movimientos"],
+    dependencies=[Depends(require_roles("admin", "bodeguero"))]
 )
 
 class MovimientoCreate(BaseModel):

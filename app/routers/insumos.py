@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, date, timedelta
 
 # Importamos la conexión y los modelos reales
+from app.core.dependencies import require_roles
 from app.database.database import get_db
 from app.models import models
 from app.schemas.schemas import InsumoCreate, InsumoResponse
@@ -13,7 +14,7 @@ router = APIRouter(
     tags=["Insumos"]
 )
 
-@router.get("/", response_model=List[InsumoResponse])
+@router.get("/", response_model=List[InsumoResponse], dependencies=[Depends(require_roles("admin", "bodeguero", "ventas"))])
 def obtener_insumos(db: Session = Depends(get_db)):
     # Consultamos todos los productos de la base de datos MySQL
     productos = db.query(models.Producto).all()
@@ -45,7 +46,7 @@ def obtener_insumos(db: Session = Depends(get_db)):
     return respuesta
 
 
-@router.post("/", response_model=InsumoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=InsumoResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles("admin", "bodeguero"))])
 def crear_insumo(insumo: InsumoCreate, db: Session = Depends(get_db)):
     # 1. Creamos la entidad general del producto
     nuevo_producto = models.Producto(

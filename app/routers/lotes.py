@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from datetime import date
 from typing import List
+from app.core.dependencies import require_roles
 from app.database.database import get_db  
 import pymysql
 from sqlalchemy import text
@@ -32,7 +33,7 @@ class LoteResponse(BaseModel):
         from_attributes = True
 
 # 1. ENDPOINT: Obtener los lotes de un producto específico
-@router.get("/{id_producto}", response_model=List[dict])
+@router.get("/{id_producto}", response_model=List[dict], dependencies=[Depends(require_roles("admin", "bodeguero", "ventas"))])
 def obtener_lotes_por_producto(id_producto: int, connection = Depends(get_db)):
     try:
         # En SQLAlchemy, las consultas crudas se envuelven con text() 
@@ -56,7 +57,7 @@ def obtener_lotes_por_producto(id_producto: int, connection = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error al consultar la base de datos: {str(e)}")
 
 # 2. ENDPOINT: Registrar un nuevo lote físico
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles("admin", "bodeguero"))])
 def crear_lote(lote: LoteCreate, connection = Depends(get_db)):
     try:
         # 1. Verificar si el código de lote ya existe usando text()
