@@ -1,13 +1,16 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from dotenv import load_dotenv
 
 from app.core.dependencies import require_roles
+
+load_dotenv()
 
 router = APIRouter(
     prefix="/api/clima",
@@ -22,7 +25,7 @@ OPENWEATHER_LANG = os.getenv("OPENWEATHER_LANG", "es")
 
 
 def _fetch_json(url: str) -> dict:
-    request = Request(url, headers={"User-Agent": "AgroTech/1.0"})
+    request = Request(url, headers={"User-Agent": "AgroNova/1.0"})
     with urlopen(request, timeout=15) as response:
       return json.loads(response.read().decode("utf-8"))
 
@@ -123,7 +126,7 @@ def obtener_clima(
                 "nubosidad": cloudiness,
                 "temp_min": round(temp_min, 1),
                 "temp_max": round(temp_max, 1),
-                "actualizado_en": datetime.utcfromtimestamp(weather_data.get("dt", 0)).isoformat(),
+                "actualizado_en": datetime.fromtimestamp(weather_data.get("dt", 0), tz=timezone.utc).isoformat(),
             },
             "recomendacion": recomendacion,
         }

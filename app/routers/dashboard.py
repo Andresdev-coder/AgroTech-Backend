@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, text
 from datetime import datetime
 
 # Importamos la conexión, los modelos y el esquema de validación
@@ -18,7 +18,7 @@ router = APIRouter(
 @router.get("", response_model=DashboardResponse)
 async def get_dashboard_data(db: Session = Depends(get_db)):
     """
-    Consolida toda la información requerida por el Dashboard de AgroTech
+    Consolida toda la información requerida por el Dashboard de AgroNova
     consultando directamente la base de datos MySQL.
     """
     
@@ -35,23 +35,27 @@ async def get_dashboard_data(db: Session = Depends(get_db)):
     ).scalar() or 0
 
     # 4. KPI: Simulación de Ventas del Mes
-    ventas_mes = "$ 4,250,000"
+    ahora = datetime.now()
+    inicio_mes = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if inicio_mes.month == 12:
+        inicio_mes_siguiente = inicio_mes.replace(year=inicio_mes.year + 1, month=1)
+    else:
+        inicio_mes_siguiente = inicio_mes.replace(month=inicio_mes.month + 1)
+    ventas_mes = db.execute(
+        text("""
+            SELECT COALESCE(SUM(total_factura), 0)
+            FROM ventas
+            WHERE fecha_venta >= :inicio_mes AND fecha_venta < :fin_mes
+        """),
+        {"inicio_mes": inicio_mes, "fin_mes": inicio_mes_siguiente},
+    ).scalar() or 0
 
     kpis_real = [
-        {"title": "Total Insumos", "value": str(total_insumos), "subtitle": "Tipos registrados", "trend": "+12.5%", "isPositive": True, "trendText": "vs mes anterior", "icon": "Boxes", "iconBg": "bg-emerald-50 text-emerald-600"},
-        {"title": "Stock Total", "value": f"{stock_total:,}", "subtitle": "Unidades disponibles", "trend": "+8.3%", "isPositive": True, "trendText": "vs mes anterior", "icon": "Layers", "iconBg": "bg-amber-50 text-amber-600"},
-        {"title": "Lotes Críticos", "value": str(lotes_criticos_count), "subtitle": "Requieren atención", "trend": "Alerta", "isPositive": False, "trendText": "Revisar fechas/stock", "icon": "AlertTriangle", "iconBg": "bg-red-50 text-red-600"},
-        {"title": "Ventas del Mes", "value": ventas_mes, "subtitle": "Total facturado", "trend": "+15.7%", "isPositive": True, "trendText": "vs mes anterior", "icon": "DollarSign", "iconBg": "bg-blue-50 text-blue-600"}
+        {"title": "Total Insumos", "value": str(total_insumos), "subtitle": "Productos registrados", "icon": "Boxes", "iconBg": "bg-teal-50 text-teal-600"},
+        {"title": "Stock Total", "value": f"{stock_total:,}", "subtitle": "Unidades disponibles", "icon": "Layers", "iconBg": "bg-amber-50 text-amber-600"},
+        {"title": "Lotes Críticos", "value": str(lotes_criticos_count), "subtitle": "Requieren atención", "icon": "AlertTriangle", "iconBg": "bg-red-50 text-red-600"},
+        {"title": "Ventas del Mes", "value": str(float(ventas_mes)), "subtitle": "Total facturado este mes", "icon": "DollarSign", "iconBg": "bg-blue-50 text-blue-600"}
     ]
-
-    # Datos de Clima (Estáticos)
-    clima_mock = {
-        "temperatura": "28°C",
-        "condicion": "Parcialmente nublado",
-        "humedad": "65%",
-        "viento": "12 km/h",
-        "presion": "1013 hPa"
-    }
 
     # 5. CÁLCULO REAL PARA LA DONA DE ESTADOS (Semaforización)
     todos_los_lotes = db.query(models.Lote).all()
@@ -62,7 +66,7 @@ async def get_dashboard_data(db: Session = Depends(get_db)):
     for lote in todos_los_lotes:
         dias_para_vencer = (lote.fecha_vencimiento - hoy).days
         
-        # Reglas de negocio profesionales para AgroTech
+        # Reglas de negocio del inventario de AgroNova
         if dias_para_vencer <= 0 or lote.cantidad_actual == 0:
             rojos += 1       # Crítico: Vencido o sin existencias
         elif dias_para_vencer <= 30:
@@ -108,7 +112,7 @@ async def get_dashboard_data(db: Session = Depends(get_db)):
     # Enviamos todo consolidado al Frontend, incluyendo el nuevo estado_lotes
     return {
         "kpis": kpis_real,
-        "clima": clima_mock,
+        "clima": {},
         "lotes_criticos": lotes_real,
         "movimientos": movimientos_real,
         "estado_lotes": {

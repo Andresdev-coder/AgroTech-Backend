@@ -9,11 +9,13 @@ from app.routers import insumos
 from app.routers import lotes, movimientos
 from app.routers import alertas, proyecciones
 from app.routers import ventas
+from app.routers import clima
+from app.routers import usuarios
 from app.database.database import engine
 
 
 app = FastAPI(
-    title="AgroTech API",
+    title="AgroNova API",
     description="API para el monitoreo inteligente e inventario agrícola - SENA ADSO",
     version="1.0.0"
 )
@@ -41,6 +43,8 @@ app.include_router(movimientos.router)
 app.include_router(alertas.router)
 app.include_router(proyecciones.router)
 app.include_router(ventas.router)
+app.include_router(clima.router)
+app.include_router(usuarios.router)
 
 
 @app.on_event("startup")
@@ -79,4 +83,4 @@ def ensure_sales_columns():
 
 @app.get("/")
 def read_root():
-    return {"status": "AgroTech Backend Operando Correctamente"}
+    return {"status": "AgroNova Backend Operando Correctamente"}
